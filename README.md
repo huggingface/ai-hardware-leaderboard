@@ -97,3 +97,6 @@ curl http://127.0.0.1:8080/v1/chat/completions \
 }'
 
 ollama pull llama3
+- make this a tui instead
+
+- add status page on ai model is there are working 

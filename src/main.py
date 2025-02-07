@@ -2,20 +2,20 @@ from typing import Optional
 import os
 import typer
 from backend.run_backend import BackendRunner
-from benchmark.single_request import test_backend_working
-from get_top_models import (
-    get_top_text_generation_models,
-    NUMBER_OF_MODELS_TO_BENCHMARK,
-)
+from benchmark.test_backend_working import test_backend_working
+from model.get_models import get_models
 from loguru import logger
 from hardware.hardware_cli import display_hardware_menu
 from hardware.hardware_detector import HardwareDetector
-from weights import download_no_weights_model
+from model.weights import download_no_weights_model
 from huggingface_hub.utils._auth import get_token
 from backend.backend_types import get_backend_types
-from results import LeaderboardData, upload_data_to_hub
+from dataset.leaderboard_dataset import LeaderboardData, upload_data_to_hub
 from datetime import datetime
 from rich.console import Console
+from dotenv import load_dotenv
+
+load_dotenv()
 
 console = Console()
 
@@ -26,11 +26,13 @@ if get_token() is None:
 
 app = typer.Typer()
 
-machine = os.environ.get("MACHINE", "unknown")
+machine = os.environ.get("MACHINE_NAME", "unknown")
+if machine == "unknown":
+    logger.debug("(CI) Machine is not set so the results will not be uploaded to the leaderboard")
 
 @app.command()
 def start_benchmark(
-    no_weights: Optional[bool] = True,
+    no_weights: Optional[bool] = False,
 ):
     """
     Start all the benchmarks for all the top text generation models on Hugging Face Hub with all the backends.
@@ -48,42 +50,35 @@ def start_benchmark(
         # Display menu and get selection
         selected_hardware = display_hardware_menu(recommended_hardware)
 
-    console.print(f"\n[green]Selected Hardware Configuration:[/green]: {selected_hardware}")
+    console.print(f"\n[green]Selected Hardware Configuration:[/green]: {selected_hardware}\n")
 
-    top_models = get_top_text_generation_models()
+    top_models = get_models()
     logger.info(
-        f"\nTop {NUMBER_OF_MODELS_TO_BENCHMARK} text generation models on Hugging Face Hub:"
+        f"\nTop {len(top_models)} text generation models on Hugging Face Hub:"
     )
     
-    results = []
+    results: list[LeaderboardData] = []
     for i, model in enumerate(top_models, 1):
-        logger.info(f"{i}. {model['model_id']}: {model['downloads']:,} downloads")
+        logger.info(f"{i}. {model.name}")
         for backend_type in get_backend_types():
             logger.info(
-                f"Running benchmark for {model['model_id']} with {backend_type} backend"
+                f"Running benchmark for {model.name} with {backend_type} backend"
             )
-            try:
-                result = single_model_benchmark(model["model_id"], backend_type, selected_hardware, no_weights)
-                results.append(result)
-                if result.working and os.environ.get("QUICK_BENCHMARKING", "0") == "1":
-                    break
-            except Exception as e:
-                logger.error(f"Failed to run benchmark for {model['model_id']} with {backend_type} backend: {str(e)}")
-                # Add failed result to track failures
-                results.append(result)
+
+            result = single_model_benchmark(model.hf_model_id, backend_type, selected_hardware, no_weights)
+            results.append(result)
+            if result.can_serve_single_request and os.environ.get("QUICK_BENCHMARKING", "0") == "1":
+                logger.info(f"Quick benchmarking enabled, stopping after first successful benchmark")
+                break
                 
                 
     # display summary of results
     console.print("\n[green]Summary of results:[/green]")
     for result in results:
-        console.print(f"{selected_hardware} - {result.model_id} with {result.backend_type} backend: {'[green]working[/green]' if result.working else '[red]failed[/red]'}")
+        console.print(f"{selected_hardware} - {result.model_id} with {result.backend_type} backend: {'[green]working[/green]' if result.can_serve_single_request else '[red]failed[/red]'}")
     
     # Upload all results at once
-    try:
-        upload_data_to_hub(results)
-        logger.info("Successfully uploaded results to the leaderboard")
-    except Exception as e:
-        logger.error(f"Failed to upload results to the leaderboard: {str(e)}")
+    upload_data_to_hub(results)
 
 
 def single_model_benchmark(
@@ -103,17 +98,13 @@ def single_model_benchmark(
         raise ValueError(f"backend_type must be one of the following: {get_backend_types()}")
 
     if no_weights:
+        raise ValueError("No weights are currently not working")
+        logger.info(f"Using no weights model {model_id}")
         download_no_weights_model(model_id)
 
     backend_runner = BackendRunner()
     
-    result = LeaderboardData(
-        model_id=model_id,
-        backend_type=backend_type,
-        working=False,
-        machine=machine,
-        benchmark_time=datetime.now()
-    )
+    can_serve_single_request = False
     
     try:
         # Start the backend server
@@ -121,19 +112,19 @@ def single_model_benchmark(
         
         # Try the requests - this will try chat first, then completion if chat fails
         if test_backend_working(model_id):
-            result = LeaderboardData(
-                model_id=model_id,
-                backend_type=backend_type,
-                working=True,
-                machine=machine,
-                benchmark_time=datetime.now()
-            )
+            can_serve_single_request = True
     finally:
         # Only stop the backend after all attempts are done
         backend_runner.stop()
         
-    return result
-
+    return LeaderboardData(
+        model_id=model_id,
+        backend_type=backend_type,
+        can_serve_single_request=can_serve_single_request,
+        hardware_type=hardware_type,
+        machine=machine,
+        benchmark_time=datetime.now()
+    )
 
 if __name__ == "__main__":
     app()

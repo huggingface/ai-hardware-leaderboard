@@ -1,4 +1,5 @@
-docker run {{docker_args}} {{container_name_arg}} \
+docker run {{docker_args}} \
+    -v $(echo $HOME)/.cache/huggingface:/root/.cache/huggingface \
     -p 8080:8000 \
     --ipc=host \
     vllm/vllm-openai:latest \
