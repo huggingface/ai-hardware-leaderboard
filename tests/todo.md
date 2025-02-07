@@ -1,0 +1,1 @@
+- check for no regression in hardware provider so if test work one week it should work the next week

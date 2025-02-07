@@ -1,0 +1,14 @@
+- hardware_type: cuda
+  backends:
+    vllm:
+      docker_args: --runtime nvidia --gpus all
+    tgi:
+      docker_args: --runtime nvidia --gpus all
+
+# The default settings that are used if no hardware_type is specified
+- hardware_type: default_settings
+  backends:
+    vllm:
+      docker_args: null
+    tgi:
+      docker_args: null

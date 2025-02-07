@@ -1,0 +1,21 @@
+[project]
+name = "huggingface-hardware-leaderboard"
+version = "0.1.0"
+description = "HuggingFace Hardware Leaderboard"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "typer",
+    "loguru",
+    "jinja2",
+    "torch",
+    "transformers",
+    "huggingface-hub",
+    "safetensors",
+    "pydantic",
+    "requests",
+    "datasets",
+    "pandas"
+]
+[project.scripts]
+llm-hardware = "main:app"
