@@ -1,5 +1,3 @@
-docker run {{docker_args}} {{container_name_arg}} \
-    -p 8080:8000 \
-    --ipc=host \
-    vllm/vllm-openai:latest \
-    --model {{model}}
+docker run {{docker_args}} --shm-size 64g -p 8080:80 \
+    ghcr.io/huggingface/text-generation-inference:latest \
+    --model-id {{model}}

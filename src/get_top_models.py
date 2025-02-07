@@ -2,8 +2,7 @@ import requests
 import os
 from typing import List, Dict
 
-NUMBER_OF_MODELS_TO_BENCHMARK = 10
-
+NUMBER_OF_MODELS_TO_BENCHMARK = int(os.environ.get("NUMBER_OF_MODELS_TO_BENCHMARK", 10))
 
 def get_top_text_generation_models(
     n: int = NUMBER_OF_MODELS_TO_BENCHMARK, sort: str = "downloads", direction: int = -1

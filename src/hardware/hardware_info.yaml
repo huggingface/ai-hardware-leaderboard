@@ -1,14 +1,106 @@
+# NVIDIA GPU Configuration
 - hardware_type: cuda
   backends:
     vllm:
       docker_args: --runtime nvidia --gpus all
     tgi:
-      docker_args: --runtime nvidia --gpus all
+      docker_args: --gpus all
+    ollama:
+      docker_args: --gpus=all
 
-# The default settings that are used if no hardware_type is specified
+# Intel CPU Configuration
+- hardware_type: intel_cpu
+  backends:
+    vllm:
+      docker_args: --device=/dev/cpu:/dev/cpu
+    tgi:
+      docker_args: --device=/dev/cpu:/dev/cpu
+    ollama:
+      docker_args: --device=/dev/cpu:/dev/cpu
+      runtime_options:
+        num_threads: auto
+
+# Intel Habana Configuration
+- hardware_type: habana
+  backends:
+    vllm:
+      docker_args: --runtime=habana --device=/dev/habana_pci0:/dev/habana_pci0
+    tgi:
+      docker_args: --runtime=habana --device=/dev/habana_pci0:/dev/habana_pci0
+    ollama:
+      docker_args: --runtime=habana --device=/dev/habana_pci0:/dev/habana_pci0
+
+# Intel GPU Configuration
+- hardware_type: intel_gpu
+  backends:
+    vllm:
+      docker_args: --device=/dev/dri:/dev/dri
+    tgi:
+      docker_args: --device=/dev/dri:/dev/dri
+    ollama:
+      docker_args: --device=/dev/dri:/dev/dri
+
+# Google TPU Configuration
+- hardware_type: tpu
+  backends:
+    vllm:
+      docker_args: --privileged --device=/dev/accel0:/dev/accel0
+    tgi:
+      docker_args: --privileged --device=/dev/accel0:/dev/accel0
+    ollama:
+      docker_args: --privileged --device=/dev/accel0:/dev/accel0
+
+# AWS Inferentia Configuration
+- hardware_type: inferentia
+  backends:
+    vllm:
+      docker_args: --device=/dev/neuron0:/dev/neuron0
+    tgi:
+      docker_args: --device=/dev/neuron0:/dev/neuron0
+    ollama:
+      docker_args: --device=/dev/neuron0:/dev/neuron0
+
+# AMD GPU Configuration
+- hardware_type: rocm
+  backends:
+    vllm:
+      docker_args: --device=/dev/kfd --device=/dev/dri
+    tgi:
+      docker_args: --device=/dev/kfd --device=/dev/dri
+    ollama:
+      docker_args: --device /dev/kfd --device /dev/dri
+      image_suffix: rocm
+
+
+
+# AMD CPU Configuration
+- hardware_type: amd_cpu
+  backends:
+    vllm:
+      docker_args: --device=/dev/cpu:/dev/cpu
+    tgi:
+      docker_args: --device=/dev/cpu:/dev/cpu
+    ollama:
+      docker_args: --device=/dev/cpu:/dev/cpu
+      runtime_options:
+        num_threads: auto
+
+# Apple Silicon Configuration
+- hardware_type: apple_silicon
+  backends:
+    vllm:
+      docker_args: --platform linux/arm64
+    tgi:
+      docker_args: --platform linux/arm64
+    ollama:
+      docker_args: --platform linux/arm64
+
+# Default Settings (used if no hardware_type is specified)
 - hardware_type: default_settings
   backends:
     vllm:
       docker_args: null
     tgi:
+      docker_args: null
+    ollama:
       docker_args: null

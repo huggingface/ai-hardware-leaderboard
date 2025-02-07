@@ -2,12 +2,16 @@ from pydantic import BaseModel
 from typing import Optional
 from datasets import load_dataset, Dataset
 import pandas as pd
+from datetime import datetime
+
+DATASET_NAME = "hf-ai-hardware/ai-hardware-leaderboard"
 
 class LeaderboardData(BaseModel):
     model_id: str
     backend_type: str
     working: bool
     machine: Optional[str]
+    benchmark_time: datetime
 
 def upload_data_to_hub(results: list[LeaderboardData]):
     """
@@ -16,11 +20,13 @@ def upload_data_to_hub(results: list[LeaderboardData]):
     # Convert results to list of dicts
     results_dict = [result.model_dump() for result in results]
     
-    # Download existing dataset
-    leaderboard_dataset = load_dataset("hf-hardware/hardware-leaderboard")
-    
-    # Convert to pandas DataFrame for easier manipulation
-    df: pd.DataFrame = leaderboard_dataset.to_pandas()  # type: ignore
+    try:
+        # Try to download existing dataset
+        leaderboard_dataset = load_dataset(DATASET_NAME)
+        df: pd.DataFrame = leaderboard_dataset.to_pandas()  # type: ignore
+    except Exception:
+        # If dataset doesn't exist, start with empty DataFrame
+        df = pd.DataFrame(columns=["model_id", "backend_type", "working", "machine"])
     
     # Create DataFrame from new results
     new_df: pd.DataFrame = pd.DataFrame(results_dict)
@@ -58,9 +64,13 @@ def upload_data_to_hub(results: list[LeaderboardData]):
         commit_parts.append(f"Added entries: {', '.join(added_entries)}")
     commit_message = " | ".join(commit_parts)
     
+    # if there is no commit message, we don't need to upload as we didn't change anything
+    if not commit_message:
+        return
+    
     # Convert back to Dataset
     dataset = Dataset.from_pandas(df)
     
     # Push to hub with commit message
-    dataset.push_to_hub("hf-hardware/hardware-leaderboard", commit_message=commit_message)
+    dataset.push_to_hub(DATASET_NAME, commit_message=commit_message)
    

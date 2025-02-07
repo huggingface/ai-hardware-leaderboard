@@ -2,6 +2,8 @@
 
 # How to use
 
+please select your hardware type
+
 uv venv
 source .venv/bin/activate
 uv pip install .
@@ -16,20 +18,21 @@ gradio interface
 -> the philiosphy no manual ops or anything docker run that serve a openai container request
 -> no crazy docker argument (meaning sensible default)
 What is benefit you show your hardware support the latest and greatest
--> need to be in TGI or vLLM (or strong community demand for another backend such a llama.cpp, like support on edge device) cannot expected user to learn a new framework
+-> need to be in TGI or vLLM (or strong community demand for another backend such a llama.cpp, like support on edge device (or should i do ollama directly)) cannot expected user to learn a new framework
 -> contribute hardware to run nightly ci on it
 
 -> simpler only a single request
 
 hardware to support (use generic name and then give more info about the specific hardware)
-- nvidia gpu
-- intel cpu
+- nvidia gpu (done)
+- intel cpu (in-working)
 - intel habana
 - intel gpu
 - google tpu
 - aws inferentia
 - amd gpu
 - amd cpu
+- apple silicon cpu
 (use their logo)
 -> simple green box if compatible 
 
@@ -40,7 +43,8 @@ Later:
 - montior memory usage
 - dashboard to get more info like the running of the each benchmark (can i do all in 6h? otherwise max it parrallel on each model so 10 jobs? -> faster)
 - performance for each type of hardware (with aggregate option)
-- startup time
+- startup time (need to do docker pull first then)
+- find a way to get price
 
 
 explain philosphy behind it:
@@ -52,3 +56,44 @@ why benchamrk llm, why openai, big use cases
 if out of memory should not count as failure...?
 
 also do not use gguf models?
+
+
+how to manually test a backend with curl
+
+curl http://127.0.0.1:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d '{
+    "model": "openai-community/gpt2",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is Deep Learning?"
+      }
+    ],
+    "max_tokens": 20
+  }'
+
+
+  - volume should be optional to prevent filling up the harddrive
+
+
+docker run --gpus=all -p 8080:11434 --name llm-hardware-benchmark ollama/ollama
+
+docker exec -it llm-hardware-benchmark ollama run llama3
+
+curl http://127.0.0.1:8080/v1/chat/completions \
+-H "Content-Type: application/json" \
+-X POST \
+-d '{
+"model": "llama3",
+"messages": [
+    {
+    "role": "user",
+    "content": "What is Deep Learning?"
+    }
+],
+"max_tokens": 20
+}'
+
+ollama pull llama3

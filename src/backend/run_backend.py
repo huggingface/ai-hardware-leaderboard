@@ -9,20 +9,24 @@ from hardware.hardware_info import get_hardware_info
 from backend.backend_types import get_backend_types
 from loguru import logger
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BENCHMARKING_CONTAINER_NAME = "llm-hardware-benchmark"
 
 
 class BackendRunner:
-    BENCHMARKING_CONTAINER_NAME = "llm-hardware-benchmark"
 
     def __init__(self):
         self.process = None
 
     @staticmethod
-    def _log_stream(stream, prefix):
+    def _log_stream(stream):
         """Log output from a stream line by line with a prefix."""
         for line in iter(stream.readline, ''):
             if line:
-                logger.info(f"{prefix}: {line.strip()}")
+                print(line.strip())
 
     def wait_for_server(self, timeout=3000, check_interval=10):
         """
@@ -52,6 +56,7 @@ class BackendRunner:
         self,
         model: str, 
         backend_type: str, 
+        hardware_type: str,
         no_weights: Optional[bool] = True
     ):
         """
@@ -73,16 +78,18 @@ class BackendRunner:
         except subprocess.CalledProcessError:
             pass  # Ignore errors if no containers are running
         
-        hardware_info = get_hardware_info()
+        hardware_info = get_hardware_info(hardware_type)
         
         # Read the appropriate template file
         template_path = f"src/backend/{backend_type}.jinja2"
         with open(template_path, "r") as f:
             template_content = f.read()
+                    
+        if hardware_info.hardware_type == "default_settings":
+            logger.warning("No hardware type specified, using default settings, this could lead to errors as some backends require to specify the hardware type")
             
-        docker_args = hardware_info.backends[backend_type].docker_args
-        if docker_args is None:
-            docker_args = ""
+        backend_info = hardware_info.backends[backend_type].model_dump(exclude_none=True)
+        
 
         # Create template and render with parameters
         template = Template(template_content)
@@ -90,8 +97,8 @@ class BackendRunner:
         template_args = {
             "model": model,
             "hf_token": get_token(),
-            "docker_args": docker_args,
-            "container_name_arg": f"--name {self.BENCHMARKING_CONTAINER_NAME}"
+            "container_name_arg": f"--name {BENCHMARKING_CONTAINER_NAME}",
+            **backend_info
         }
         
         docker_command = template.render(**template_args)
@@ -122,8 +129,8 @@ class BackendRunner:
             )
             
             # Start threads to log stdout and stderr
-            stdout_thread = threading.Thread(target=self._log_stream, args=(self.process.stdout, "DOCKER"))
-            stderr_thread = threading.Thread(target=self._log_stream, args=(self.process.stderr, "DOCKER ERROR"))
+            stdout_thread = threading.Thread(target=self._log_stream, args=(self.process.stdout,))
+            stderr_thread = threading.Thread(target=self._log_stream, args=(self.process.stderr,))
             stdout_thread.daemon = True
             stderr_thread.daemon = True
             stdout_thread.start()
@@ -153,6 +160,6 @@ class BackendRunner:
             logger.error(f"Failed to kill process: {str(e)}")
         
         try:
-            subprocess.run(f"docker rm -f {self.BENCHMARKING_CONTAINER_NAME}", shell=True, check=True)
+            subprocess.run(f"docker rm -f {BENCHMARKING_CONTAINER_NAME}", shell=True, check=True)
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to kill container: {str(e)}")

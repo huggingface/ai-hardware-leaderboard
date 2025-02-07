@@ -1,8 +1,9 @@
 from enum import Enum
 
 class BackendType(str, Enum):
-    VLLM = "vllm"
     TGI = "tgi"
+    VLLM = "vllm"
+    # OLLAMA = "ollama" # TODO: ollama not supported yet
 
 
 def get_backend_types() -> list[str]:

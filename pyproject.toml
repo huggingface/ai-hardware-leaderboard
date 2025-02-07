@@ -1,9 +1,9 @@
 [project]
-name = "huggingface-hardware-leaderboard"
+name = "ai-hardware-leaderboard"
 version = "0.1.0"
-description = "HuggingFace Hardware Leaderboard"
+description = "Huggingface AI Hardware Leaderboard"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "typer",
     "loguru",
@@ -15,7 +15,9 @@ dependencies = [
     "pydantic",
     "requests",
     "datasets",
-    "pandas"
+    "pandas",
+    "python-dotenv",
+    "openai"
 ]
 [project.scripts]
-llm-hardware = "main:app"
+ai-hardware-leaderboard = "main:app"
