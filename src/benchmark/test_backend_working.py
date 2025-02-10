@@ -4,9 +4,6 @@ from openai import OpenAI
 
 QUESTION = "What is Deep Learning?"
 
-
-
-
 def check_answer(answer: str | None):
     assert answer is not None, "Generated text is empty"
     assert len(answer) > 0, "Generated text is empty"
@@ -18,16 +15,19 @@ def try_chat_request(model_id: str):
         api_key="-"
     )
 
+    start_time = time.time()
     completion = client.chat.completions.create(
         model=model_id,
         messages=[
             {"role": "user", "content": QUESTION}
         ]
     )
+    end_time = time.time()
+    duration = end_time - start_time
 
     answer = completion.choices[0].message.content
     
-    logger.info(f"Answer received: {answer}")
+    logger.info(f"Answer received in {duration:.2f} seconds: {answer}")
     
     check_answer(answer)
 
