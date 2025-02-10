@@ -112,7 +112,7 @@ def single_model_benchmark(
         
         if started:
             # Try the requests - this will try chat first, then completion if chat fails
-            backend_working = test_backend_working(model)
+            backend_working = test_backend_working(model, backend_type)
             
             if backend_working:
                 can_serve_single_request = True

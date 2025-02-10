@@ -2,6 +2,8 @@ import time
 from loguru import logger
 from openai import OpenAI
 
+from model.get_models import Model
+
 QUESTION = "What is Deep Learning?"
 
 def check_answer(answer: str | None):
@@ -9,6 +11,9 @@ def check_answer(answer: str | None):
     assert len(answer) > 0, "Generated text is empty"
 
 def try_chat_request(model_id: str):
+    
+    # assert model id is a string
+    assert isinstance(model_id, str), "Model id must be a string"
     
     client = OpenAI(
         base_url="http://localhost:8080/v1",
@@ -48,10 +53,17 @@ def try_single_request(model_id: str) -> bool:
         
     return False
 
-def test_backend_working(model_id: str) -> bool:
+def test_backend_working(model: Model, backend_type: str) -> bool:
     """
     Try a single request 3 times with exponential backoff.
     """
+    
+    if backend_type == "llama_cpp":
+        model_id = model.gguf_hf_model_id
+    elif backend_type == "tgi" or backend_type == "vllm":
+        model_id = model.hf_model_id
+    else:
+        raise ValueError(f"Invalid backend type: {backend_type}")
     
     logger.info(f"Testing if the backend is working with model {model_id}")
     
