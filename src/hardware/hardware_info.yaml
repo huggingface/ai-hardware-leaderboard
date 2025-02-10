@@ -21,12 +21,14 @@
 # Intel Habana Configuration
 - hardware_type: habana
   backends:
-    vllm:
-      docker_args: --runtime=habana --device=/dev/habana_pci0:/dev/habana_pci0
+    # vllm is not compatible with gaudi1
+    # vllm:
+    #   docker_args: --runtime=habana --device=/dev/habana_pci0:/dev/habana_pci0
     tgi:
-      docker_args: --runtime=habana --device=/dev/habana_pci0:/dev/habana_pci0
-    llama_cpp:
-      docker_args: --runtime=habana --device=/dev/habana_pci0:/dev/habana_pci0
+      docker_args: --runtime=habana -e PT_HPU_ENABLE_LAZY_COLLECTIVES=true -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none -e ENABLE_HPU_GRAPH=true -e LIMIT_HPU_GRAPH=true -e USE_FLASH_ATTENTION=true -e FLASH_ATTENTION_RECOMPUTE=true --cap-add=sys_nice
+      image: ghcr.io/huggingface/tgi-gaudi
+    # llama_cpp:
+    #   docker_args: --runtime=habana --device=/dev/habana_pci0:/dev/habana_pci0
 
 # Intel GPU Configuration
 - hardware_type: intel_gpu
