@@ -4,9 +4,11 @@
 
 please select your hardware type
 
+cp .env.example .env
+
 uv venv
 source .venv/bin/activate
-uv pip install .
+uv pip install -e .
 
 - start different backend
 - download with no weight

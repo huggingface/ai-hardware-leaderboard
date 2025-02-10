@@ -4,12 +4,12 @@
     vllm:
       docker_args: --runtime nvidia --gpus all
     tgi:
-      docker_args: --gpus all
+      docker_args: --gpus all --shm-size 64g
     llama_cpp:
       docker_args: --gpus all
 
-# Intel CPU Configuration
-- hardware_type: intel_cpu
+# AMD and Intel CPU Configuration
+- hardware_type: cpu
   backends:
     vllm:
       docker_args: --device=/dev/cpu:/dev/cpu
@@ -62,13 +62,14 @@
 - hardware_type: rocm
   backends:
     vllm:
-      docker_args: --device=/dev/kfd --device=/dev/dri
+      docker_args: --network=host --group-add=video --ipc=host --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --device /dev/kfd --device /dev/dri
+      image: rocm/vllm
     tgi:
-      docker_args: --device=/dev/kfd --device=/dev/dri
+      docker_args: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --device=/dev/kfd --device=/dev/dri --group-add video --ipc=host --shm-size 256g --net host
+      image_suffix: -rocm
     llama_cpp:
       docker_args: --device /dev/kfd --device /dev/dri
       image_suffix: -rocm
-
 
 
 # AMD CPU Configuration

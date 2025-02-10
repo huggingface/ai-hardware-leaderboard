@@ -1,16 +1,23 @@
 from typing import Optional, List
 import yaml
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, Extra
 import os
 
 class BackendInfo(BaseModel):
     docker_args: Optional[str] = None
     image_suffix: Optional[str] = None
     runtime_options: Optional[dict] = None
+    image: Optional[str] = None
+    
+    class Config:
+        extra = Extra.forbid
 
 class HardwareInfo(BaseModel):
     hardware_type: str
     backends: dict[str, BackendInfo]
+    
+    class Config:
+        extra = Extra.forbid
 
 def get_hardware_info(hardware_type: str) -> HardwareInfo:
     with open("src/hardware/hardware_info.yaml", "r") as f:
