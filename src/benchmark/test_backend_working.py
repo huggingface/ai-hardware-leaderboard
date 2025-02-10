@@ -6,16 +6,18 @@ QUESTION = "What is Deep Learning?"
 
 
 
-client = OpenAI(
-        base_url="http://localhost:8080/v1",
-        api_key="-"
-    )
 
 def check_answer(answer: str | None):
     assert answer is not None, "Generated text is empty"
     assert len(answer) > 0, "Generated text is empty"
 
 def try_chat_request(model_id: str):
+    
+    client = OpenAI(
+        base_url="http://localhost:8080/v1",
+        api_key="-"
+    )
+
     completion = client.chat.completions.create(
         model=model_id,
         messages=[
@@ -25,21 +27,9 @@ def try_chat_request(model_id: str):
 
     answer = completion.choices[0].message.content
     
-    check_answer(answer)
-
-def try_completion_request(model_id: str):
-    completion = client.completions.create(
-        model=model_id,
-        prompt=QUESTION,
-        max_tokens=20
-    )
+    logger.info(f"Answer received: {answer}")
     
-    answer = completion.choices[0].text
     check_answer(answer)
-
-    return answer
-
-
 
 def try_single_request(model_id: str) -> bool:
     """
@@ -54,24 +44,19 @@ def try_single_request(model_id: str) -> bool:
         logger.info("Chat request succeeded")
         return True
     except Exception as e:
-        logger.warning(f"Chat request failed, falling back to completion request. Error: {str(e)}")
-    
-    # If chat fails, try completion request
-    try:
-        try_completion_request(model_id)
-        logger.info("Completion request succeeded")
-        return True
-    except Exception as e:
-        logger.error(f"Both chat and completion requests failed. Completion error: {str(e)}")
-    
+        logger.error(f"Chat request failed. Error: {str(e)}")
+        
     return False
 
 def test_backend_working(model_id: str) -> bool:
     """
     Try a single request 3 times with exponential backoff.
     """
+    
+    logger.info(f"Testing if the backend is working with model {model_id}")
+    
     retries = 3
-    base_delay = 1  # Start with 1 second delay
+    base_delay = 5  # Start with 1 second delay
     
     for attempt in range(retries):
         if try_single_request(model_id):

@@ -10,6 +10,8 @@ from backend.backend_types import get_backend_types
 from loguru import logger
 import requests
 
+from model.get_models import Model
+
 BENCHMARKING_CONTAINER_NAME = "llm-hardware-benchmark"
 
 
@@ -25,7 +27,7 @@ class BackendRunner:
             if line:
                 print(line.strip())
 
-    def wait_for_server(self, timeout=3000, check_interval=10):
+    def wait_for_server(self, backend_type, timeout=3000, check_interval=10):
         """
         Wait for the server to be ready by checking the health endpoint and container status.
         
@@ -58,7 +60,8 @@ class BackendRunner:
                         raise RuntimeError(f"Container is in unexpected state: {status}")
                 
                 # Check if server is responding
-                response = requests.get('http://localhost:8080/health')
+                url = "http://localhost:8080/health"
+                response = requests.get(url)
                 if response.status_code == 200:
                     return True
             except requests.exceptions.RequestException:
@@ -69,7 +72,7 @@ class BackendRunner:
             
             time.sleep(check_interval)
             attempts += 1
-            if attempts % 10 == 0:
+            if attempts % 1 == 0:
                 logger.info(f"Waiting for server to be ready... ({int(time.time() - start_time)}s)")
         
         # If we timeout, get container logs to help with debugging
@@ -78,11 +81,11 @@ class BackendRunner:
 
     def run(
         self,
-        model: str, 
+        model: Model, 
         backend_type: str, 
         hardware_type: str,
         no_weights: Optional[bool] = True
-    ):
+    ) -> bool:
         """
         Run the backend docker container based on model and HuggingFace token parameters.
 
@@ -90,6 +93,9 @@ class BackendRunner:
             model (str): The model identifier to use
             backend_type (str): Type of backend to run ('vllm' or 'tgi')
             no_weights (bool): Whether to download the model without weights. Defaults to True
+
+        Returns:
+            bool: True if the backend is working, False otherwise
         """
         try:
             # Validate backend type
@@ -106,7 +112,7 @@ class BackendRunner:
             hardware_info = get_hardware_info(hardware_type)
             
             # Read the appropriate template file
-            template_path = f"src/backend/{backend_type}.jinja2"
+            template_path = f"src/backend/{backend_type}/{backend_type}.jinja2"
             with open(template_path, "r") as f:
                 template_content = f.read()
                         
@@ -126,12 +132,19 @@ class BackendRunner:
             if no_weights:
                 extra_docker_args["hf_cache"] = f"--env HF_HUB_CACHE={NO_WEIGHTS_CACHE_DIR}"
             
-            backend_info["docker_args"] = f"{backend_info['docker_args']} {' '.join(extra_docker_args.values())}"
-            
+            backend_info["benchmark_docker_args"] = f"{backend_info['docker_args']} {' '.join(extra_docker_args.values())}"
+            del backend_info["docker_args"]
+
             template_args = {
-                "model": model,
                 **backend_info
             }
+            
+            if backend_type == "llama_cpp":
+                template_args["model"] = model.gguf_hf_model_id
+            elif backend_type == "tgi" or backend_type == "vllm":
+                template_args["model"] = model.hf_model_id
+            else:
+                raise ValueError(f"Invalid backend type: {backend_type}")
             
             docker_command = template.render(**template_args)
 
@@ -167,9 +180,17 @@ class BackendRunner:
             stdout_thread.start()
             stderr_thread.start()
             
+            # Check if process failed immediately
+            time.sleep(2)  # Give it a moment to potentially fail
+            if self.process.poll() is not None:
+                # Process has already exited
+                exit_code = self.process.poll()
+                stderr_output = self.process.stderr.read()
+                raise RuntimeError(f"Docker container failed to start (exit code {exit_code}): {stderr_output}")
+            
             # Wait for server to be ready
             logger.info("Starting server and waiting for it to be ready...")
-            if not self.wait_for_server():
+            if not self.wait_for_server(backend_type):
                 raise RuntimeError("Server failed to start within timeout period or container exited")
             
             logger.info("Server is ready!")
@@ -177,6 +198,9 @@ class BackendRunner:
         except Exception as e:
             logger.error(f"Failed to run docker container: {str(e)}")
             self.stop()  # Ensure cleanup on failure
+            return False
+        
+        return True
 
     def stop(self):
         """Stop the running container and the associated process if they exist."""

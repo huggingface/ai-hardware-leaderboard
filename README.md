@@ -82,11 +82,11 @@ docker run --gpus=all -p 8080:11434 --name llm-hardware-benchmark ollama/ollama
 
 docker exec -it llm-hardware-benchmark ollama run llama3
 
-curl http://127.0.0.1:8080/v1/chat/completions \
+curl http://localhost:8080/v1/chat/completions \
 -H "Content-Type: application/json" \
 -X POST \
 -d '{
-"model": "llama3",
+"model": "llama3.2:1b",
 "messages": [
     {
     "role": "user",
@@ -95,6 +95,8 @@ curl http://127.0.0.1:8080/v1/chat/completions \
 ],
 "max_tokens": 20
 }'
+
+
 
 ollama pull llama3
 - make this a tui instead

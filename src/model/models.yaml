@@ -1,11 +1,13 @@
 models:
   - name: Llama3
     hf_model_id: meta-llama/Llama-3.2-1B
-    ollama_model_name: llama3.2:1b
+    gguf_hf_model_id: bartowski/Llama-3.2-1B-Instruct-GGUF:Q8_0
   - name: Qwen2
     hf_model_id: Qwen/Qwen2.5-0.5B-Instruct
-    ollama_model_name: qwen2:0.5b
+    gguf_hf_model_id: bartowski/Qwen2.5-0.5B-Instruct-GGUF:Q8_0
   - name: Gemma2
     hf_model_id: google/gemma-2-2b-it
-    ollama_model_name: gemma2:2b
-  
+    gguf_hf_model_id: MaziyarPanahi/gemma-2-2b-it-GGUF:Q8_0
+  - name: Phi4
+    hf_model_id: microsoft/phi-4
+    gguf_hf_model_id: bartowski/phi-4-GGUF:Q8_0

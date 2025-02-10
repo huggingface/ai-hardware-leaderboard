@@ -5,7 +5,7 @@ from pydantic import BaseModel
 class Model(BaseModel):
     name: str
     hf_model_id: str
-    ollama_model_name: str
+    gguf_hf_model_id: str
 
 def get_models() -> List[Model]:
     # load from yaml file

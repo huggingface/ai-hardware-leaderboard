@@ -1,0 +1,8 @@
+docker run \
+    {{benchmark_docker_args}} \
+    -p 8080:8000 \
+    -v $(echo $HOME)/.cache/huggingface/llama.cpp:/root/.cache/llama.cpp \
+    ghcr.io/ggerganov/llama.cpp:server{{image_suffix}} \
+    -hf {{model}} \
+    --port 8000 \
+    --host 0.0.0.0
