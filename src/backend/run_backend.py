@@ -9,6 +9,9 @@ from hardware.hardware_info import get_hardware_info
 from backend.backend_types import get_backend_types
 from loguru import logger
 import requests
+from huggingface_hub.constants import HF_HOME
+import os
+from pathlib import Path
 
 from model.get_models import Model
 
@@ -85,7 +88,7 @@ class BackendRunner:
         backend_type: str, 
         hardware_type: str,
         no_weights: Optional[bool] = True
-    ) -> bool:
+    ) -> tuple[bool, Optional[str]]:
         """
         Run the backend docker container based on model and HuggingFace token parameters.
 
@@ -141,11 +144,17 @@ class BackendRunner:
             
             if backend_type == "llama_cpp":
                 template_args["model"] = model.gguf_hf_model_id
+                print("HF_HOME value:", HF_HOME)
+                llama_cpp_cache_dir = os.path.join(HF_HOME, "llama.cpp")
+                print("llama_cpp_cache_dir", llama_cpp_cache_dir)
+                os.makedirs(llama_cpp_cache_dir, exist_ok=True)
+                # Add home directory to template args
             elif backend_type == "tgi" or backend_type == "vllm":
                 template_args["model"] = model.hf_model_id
             else:
                 raise ValueError(f"Invalid backend type: {backend_type}")
             
+            template_args["home_dir"] = str(Path.home())
             docker_command = template.render(**template_args)
 
             # Log the docker command (without sensitive info)
@@ -198,9 +207,31 @@ class BackendRunner:
         except Exception as e:
             logger.error(f"Failed to run docker container: {str(e)}")
             self.stop()  # Ensure cleanup on failure
-            return False
+            return False, None
         
-        return True
+        
+        def clean_docker_command(docker_command: str) -> str:
+            # First, join the lines and remove all backslashes and extra whitespace
+            docker_command = docker_command.replace("\\\n", " ").strip()
+            docker_command = " ".join(docker_command.split())
+            
+            # Replace token
+            token = get_token()
+            if token:
+                docker_command = docker_command.replace(token, "YOUR_HF_TOKEN")
+            
+            # Replace home dir with ~
+            home_dir = str(Path.home())
+            docker_command = docker_command.replace(home_dir, "~")
+            
+            # Remove --name llm-hardware-benchmark
+            docker_command = docker_command.replace("--name llm-hardware-benchmark", "")
+            
+            return docker_command.strip()
+        
+        cleaned_docker_command = clean_docker_command(docker_command)
+        
+        return True, cleaned_docker_command
 
     def stop(self):
         """Stop the running container and the associated process if they exist."""

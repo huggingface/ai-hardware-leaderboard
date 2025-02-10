@@ -2,6 +2,6 @@ docker run \
     {{benchmark_docker_args}} \
     --shm-size 64g \
     -p 8080:80 \
-    -v $(echo $HOME)/.cache/huggingface:/data \
+    -v {{home_dir}}/.cache/huggingface:/data \
     ghcr.io/huggingface/text-generation-inference:latest \
     --model-id {{model}}

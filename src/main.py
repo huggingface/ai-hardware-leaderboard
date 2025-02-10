@@ -108,7 +108,7 @@ def single_model_benchmark(
     
     try:
         # Start the backend server
-        started = backend_runner.run(model, backend_type, hardware_type, no_weights)
+        started, docker_command = backend_runner.run(model, backend_type, hardware_type, no_weights)
         
         if started:
             # Try the requests - this will try chat first, then completion if chat fails
@@ -126,7 +126,8 @@ def single_model_benchmark(
         can_serve_single_request=can_serve_single_request,
         hardware_type=hardware_type,
         machine=machine,
-        benchmark_time=datetime.now()
+        benchmark_time=datetime.now(),
+        docker_command=docker_command
     )
 
 if __name__ == "__main__":

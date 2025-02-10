@@ -10,9 +10,10 @@ DATASET_NAME = "hf-ai-hardware/ai-hardware-leaderboard"
 class LeaderboardData(BaseModel):
     model_id: str
     backend_type: str
-    can_serve_single_request: bool
     hardware_type: str
-    machine: Optional[str]
+    machine: str
+    can_serve_single_request: bool
+    docker_command: Optional[str]
     benchmark_time: datetime
 
 def upload_data_to_hub(results: list[LeaderboardData]):

@@ -1,9 +1,9 @@
 from enum import Enum
 
 class BackendType(str, Enum):
-    TGI = "tgi"
+    # TGI = "tgi"
     # VLLM = "vllm"
-    # LLAMA_CPP = "llama_cpp"
+    LLAMA_CPP = "llama_cpp"
 
 
 def get_backend_types() -> list[str]:
