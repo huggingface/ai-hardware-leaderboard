@@ -17,7 +17,7 @@ gradio interface
 - compatibility as first link with each hardware type
 
 - document for hardware partner to help give us hardware to run our leaderboard
--> the philiosphy no manual ops or anything docker run that serve a openai container request
+-> the philosophy no manual ops or anything docker run that serve a openai container request
 -> no crazy docker argument (meaning sensible default)
 What is benefit you show your hardware support the latest and greatest
 -> need to be in TGI or vLLM (or strong community demand for another backend such a llama.cpp, like support on edge device (or should i do ollama directly)) cannot expected user to learn a new framework
@@ -41,16 +41,16 @@ hardware to support (use generic name and then give more info about the specific
 - save the command line to allow people to run the container on the platform (give more credibility)
 
 Later:
-- montior energy with code-carbon
-- montior memory usage
-- dashboard to get more info like the running of the each benchmark (can i do all in 6h? otherwise max it parrallel on each model so 10 jobs? -> faster)
+- monitor energy with code-carbon
+- monitor memory usage
+- dashboard to get more info like the running of the each benchmark (can i do all in 6h? otherwise max it parallel on each model so 10 jobs? -> faster)
 - performance for each type of hardware (with aggregate option)
 - startup time (need to do docker pull first then)
 - find a way to get price
 
 
-explain philosphy behind it:
-why benchamrk llm, why openai, big use cases
+explain philosophy behind it:
+why benchmark llm, why openai, big use cases
 
 
 -> need to think about how to be smart about the benchmarks
